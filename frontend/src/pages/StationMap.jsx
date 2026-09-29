@@ -15,11 +15,16 @@ export function StationMap({ stations, onSelectStation, onNavigateTab }) {
       // Center on India [22.5, 79.0]
       const map = L.map(mapContainerRef.current).setView([22.5, 79.0], 5);
       
-      // Clean dark matter / satellite tile layer
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        subdomains: 'abcd',
-        maxZoom: 19
+      // High-Resolution True Satellite Imagery (Esri World Imagery - 100% Free, No API Key, No Watermark)
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 18,
+        attribution: '&copy; Esri'
+      }).addTo(map);
+
+      // Geographical Borders & State Labels Overlay
+      L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 18,
+        opacity: 0.85
       }).addTo(map);
 
       mapInstanceRef.current = map;

@@ -48,10 +48,16 @@ export function StationNetworkMap({ stations = [], onSelectStation, onNavigateTa
         attributionControl: false
       });
 
-      // Dark Satellite / Carto Dark Hybrid Tiles
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      // High-Resolution True Satellite Imagery (Esri World Imagery - 100% Free, No API Key, No Watermark)
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 18,
-        subdomains: 'abcd'
+        attribution: '&copy; Esri'
+      }).addTo(map);
+
+      // Geographical Borders & State Labels Overlay
+      L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 18,
+        opacity: 0.85
       }).addTo(map);
 
       // Custom Zoom Control at top-left
