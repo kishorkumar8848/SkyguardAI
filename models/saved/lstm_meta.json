@@ -1,0 +1,7 @@
+{
+  "threshold": 0.03468964621424675,
+  "seq_len": 24,
+  "input_dim": 3,
+  "latent_dim": 16,
+  "n_samples": 4297
+}

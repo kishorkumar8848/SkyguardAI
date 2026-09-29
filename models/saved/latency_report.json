@@ -1,0 +1,18 @@
+{
+  "rule_based": {
+    "avg_inference_latency_ms": 0.026,
+    "p95_latency_ms": 0.035
+  },
+  "isolation_forest": {
+    "avg_inference_latency_ms": 6.482,
+    "p95_latency_ms": 9.389
+  },
+  "lstm_autoencoder": {
+    "avg_inference_latency_ms": 1.122,
+    "p95_latency_ms": 1.461
+  },
+  "skyguard_hybrid": {
+    "avg_inference_latency_ms": 0.165,
+    "p95_latency_ms": 0.236
+  }
+}

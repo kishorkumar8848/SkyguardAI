@@ -1,0 +1,70 @@
+{
+  "rule_based": {
+    "precision": 0.7333,
+    "recall": 0.3056,
+    "f1": 0.4314,
+    "roc_auc": 0.6492,
+    "pr_auc": 0.2657,
+    "false_positive_rate": 0.0071,
+    "false_negative_rate": 0.6944,
+    "confusion_matrix": {
+      "tn": 560,
+      "fp": 4,
+      "fn": 25,
+      "tp": 11
+    },
+    "avg_inference_latency_ms": 0.026,
+    "p95_latency_ms": 0.035
+  },
+  "isolation_forest": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "roc_auc": 0.8518,
+    "pr_auc": 0.485,
+    "false_positive_rate": 0.0018,
+    "false_negative_rate": 1.0,
+    "confusion_matrix": {
+      "tn": 563,
+      "fp": 1,
+      "fn": 36,
+      "tp": 0
+    },
+    "avg_inference_latency_ms": 6.482,
+    "p95_latency_ms": 9.389
+  },
+  "lstm_autoencoder": {
+    "precision": 0.1986,
+    "recall": 0.8056,
+    "f1": 0.3187,
+    "roc_auc": 0.8488,
+    "pr_auc": 0.1864,
+    "false_positive_rate": 0.2074,
+    "false_negative_rate": 0.1944,
+    "confusion_matrix": {
+      "tn": 447,
+      "fp": 117,
+      "fn": 7,
+      "tp": 29
+    },
+    "avg_inference_latency_ms": 1.122,
+    "p95_latency_ms": 1.461
+  },
+  "skyguard_hybrid": {
+    "precision": 0.7273,
+    "recall": 0.2222,
+    "f1": 0.3404,
+    "roc_auc": 0.9179,
+    "pr_auc": 0.3972,
+    "false_positive_rate": 0.0053,
+    "false_negative_rate": 0.7778,
+    "confusion_matrix": {
+      "tn": 561,
+      "fp": 3,
+      "fn": 28,
+      "tp": 8
+    },
+    "avg_inference_latency_ms": 0.165,
+    "p95_latency_ms": 0.236
+  }
+}
