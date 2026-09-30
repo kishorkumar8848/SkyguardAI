@@ -17,26 +17,51 @@ import {
 } from 'lucide-react';
 import { StationNetworkMap } from '../components/StationNetworkMap';
 
-export function Overview({ stations = [], anomalies = [], lastTick, onSelectStation, onNavigateTab }) {
+export function Overview({ stations = [], anomalies = [], lastTick, onSelectStation, onNavigateTab, onInspectExplanation }) {
   const [dataTrendRange, setDataTrendRange] = useState('7d');
 
-  // Compute live aggregates or fallback to calibrated demo figures
+  // Compute live aggregates dynamically from stations
   const totalStations = stations.length || 6;
-  const healthyCount = stations.filter(s => s.status === 'HEALTHY').length || 4;
-  const warningCount = stations.filter(s => s.status === 'WARNING').length || 1;
-  const criticalCount = stations.filter(s => s.status === 'CRITICAL' || s.status === 'ANOMALOUS').length || 1;
+  const healthyCount = stations.filter(s => s.status === 'HEALTHY').length;
+  const warningCount = stations.filter(s => s.status === 'WARNING').length;
+  const criticalCount = stations.filter(s => s.status === 'CRITICAL' || s.status === 'ANOMALOUS').length;
 
   const currentTemp = lastTick?.observation?.temperature?.toFixed(1) || "32.6";
   const currentHumidity = lastTick?.observation?.humidity?.toFixed(1) || "58.4";
   const currentPressure = lastTick?.observation?.pressure?.toFixed(1) || "1007.2";
 
   // Recent anomaly records matching IMD console standard
-  const recentEvents = [
-    { time: '28 Sep 10:15', station: 'Mumbai', param: 'Temperature', type: 'Spike', severity: 'High', conf: '94%', status: 'Investigating' },
-    { time: '28 Sep 09:42', station: 'Kolkata', param: 'Humidity', type: 'Drift', severity: 'Medium', conf: '87%', status: 'Monitoring' },
-    { time: '28 Sep 08:11', station: 'New Delhi', param: 'Pressure', type: 'Inconsistency', severity: 'Medium', conf: '82%', status: 'Resolved' },
-    { time: '28 Sep 07:33', station: 'Bhopal', param: 'Temperature', type: 'Frozen', severity: 'High', conf: '91%', status: 'Resolved' },
+  const defaultEvents = [
+    { id: 1, time: '28 Sep 10:15', station: 'Mumbai Coastal AWS', param: 'Temperature', type: 'Spike', severity: 'High', conf: '94%', status: 'Investigating' },
+    { id: 2, time: '28 Sep 09:42', station: 'Kolkata Delta AWS', param: 'Humidity', type: 'Drift', severity: 'Medium', conf: '87%', status: 'Monitoring' },
+    { id: 3, time: '28 Sep 08:11', station: 'New Delhi Safdarjung', param: 'Pressure', type: 'Inconsistency', severity: 'Medium', conf: '82%', status: 'Resolved' },
+    { id: 4, time: '28 Sep 07:33', station: 'Bhopal Central AWS', param: 'Temperature', type: 'Frozen', severity: 'High', conf: '91%', status: 'Resolved' },
   ];
+
+  const displayedEvents = (anomalies && anomalies.length > 0)
+    ? anomalies.slice(0, 4).map(a => {
+        let timeStr = 'Just now';
+        try {
+          if (a.timestamp) {
+            const dt = new Date(a.timestamp);
+            timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
+        } catch(e) {}
+        const stationObj = stations.find(s => s.station_id === a.station_id);
+        const stationName = stationObj ? stationObj.station_name : (a.station_id || 'AWS-DEL-001');
+        return {
+          id: a.id || a.event_id || 1,
+          time: timeStr,
+          station: stationName,
+          param: a.parameter || 'Temperature',
+          type: a.classification === 'GENUINE_WEATHER_EVENT' ? 'Weather Event' : (a.root_cause || a.classification || 'Anomaly').replace(/_/g, ' '),
+          severity: a.severity || 'Medium',
+          conf: a.confidence ? `${Math.round(a.confidence * 100)}%` : '92%',
+          status: a.status || (a.severity === 'CRITICAL' ? 'Investigating' : 'Monitoring'),
+          raw: a
+        };
+      })
+    : defaultEvents;
 
   return (
     <div className="overview-console-grid">
@@ -56,7 +81,7 @@ export function Overview({ stations = [], anomalies = [], lastTick, onSelectStat
             </div>
           </div>
           <div className="kpi-bottom-meta">
-            <span className="kpi-subtext">0 Healthy • 0 Warning</span>
+            <span className="kpi-subtext">{healthyCount} Healthy • {warningCount} Warning • {criticalCount} Critical</span>
             {/* Mini Bar Equalizer Graphic */}
             <div className="mini-bars-graphic">
               <span style={{ height: '40%' }}></span>
@@ -104,7 +129,7 @@ export function Overview({ stations = [], anomalies = [], lastTick, onSelectStat
               <AlertTriangle size={18} />
             </div>
             <div className="kpi-values-wrap">
-              <div className="kpi-big-number font-mono" style={{ color: '#ef4444' }}>0</div>
+              <div className="kpi-big-number font-mono" style={{ color: '#ef4444' }}>{anomalies.length}</div>
               <div className="kpi-label">Active Anomaly Events</div>
             </div>
           </div>
@@ -349,8 +374,13 @@ export function Overview({ stations = [], anomalies = [], lastTick, onSelectStat
                   </tr>
                 </thead>
                 <tbody>
-                  {recentEvents.map((evt, idx) => (
-                    <tr key={idx}>
+                  {displayedEvents.map((evt, idx) => (
+                    <tr 
+                      key={idx} 
+                      style={{ cursor: 'pointer' }}
+                      title="Click to inspect AI explanation audit trail"
+                      onClick={() => onInspectExplanation && onInspectExplanation(evt.raw || evt)}
+                    >
                       <td className="font-mono text-muted">{evt.time}</td>
                       <td className="font-semibold text-white">{evt.station}</td>
                       <td>{evt.param}</td>
@@ -486,30 +516,33 @@ export function Overview({ stations = [], anomalies = [], lastTick, onSelectStat
               <svg viewBox="0 0 110 110" className="donut-chart-svg">
                 {/* Background Ring */}
                 <circle cx="55" cy="55" r="42" stroke="#1e293b" strokeWidth="12" fill="none" />
-                {/* Healthy segment (66.7% - Green) */}
+                {/* Healthy segment (Green) */}
                 <circle 
                   cx="55" cy="55" r="42" 
                   stroke="#10b981" strokeWidth="12" fill="none" 
-                  strokeDasharray="176 264" strokeDashoffset="0"
+                  strokeDasharray={`${Math.round((healthyCount / Math.max(1, totalStations)) * 264)} 264`} 
+                  strokeDashoffset="0"
                   transform="rotate(-90 55 55)"
                 />
-                {/* Warning segment (16.7% - Yellow) */}
+                {/* Warning segment (Yellow) */}
                 <circle 
                   cx="55" cy="55" r="42" 
                   stroke="#f59e0b" strokeWidth="12" fill="none" 
-                  strokeDasharray="44 264" strokeDashoffset="-176"
+                  strokeDasharray={`${Math.round((warningCount / Math.max(1, totalStations)) * 264)} 264`} 
+                  strokeDashoffset={`-${Math.round((healthyCount / Math.max(1, totalStations)) * 264)}`}
                   transform="rotate(-90 55 55)"
                 />
-                {/* Anomalous segment (16.7% - Orange) */}
+                {/* Critical/Anomalous segment (Red) */}
                 <circle 
                   cx="55" cy="55" r="42" 
-                  stroke="#f97316" strokeWidth="12" fill="none" 
-                  strokeDasharray="44 264" strokeDashoffset="-220"
+                  stroke="#ef4444" strokeWidth="12" fill="none" 
+                  strokeDasharray={`${Math.round((criticalCount / Math.max(1, totalStations)) * 264)} 264`} 
+                  strokeDashoffset={`-${Math.round(((healthyCount + warningCount) / Math.max(1, totalStations)) * 264)}`}
                   transform="rotate(-90 55 55)"
                 />
               </svg>
               <div className="donut-inner-label">
-                <div className="donut-center-num font-mono">6</div>
+                <div className="donut-center-num font-mono">{totalStations}</div>
                 <div className="donut-center-sub">Stations</div>
               </div>
             </div>
@@ -519,22 +552,17 @@ export function Overview({ stations = [], anomalies = [], lastTick, onSelectStat
               <div className="donut-legend-item">
                 <span className="legend-dot green"></span>
                 <span className="legend-name">Healthy</span>
-                <strong className="legend-qty font-mono">4 (66.7%)</strong>
+                <strong className="legend-qty font-mono">{healthyCount} ({Math.round((healthyCount / Math.max(1, totalStations)) * 100)}%)</strong>
               </div>
               <div className="donut-legend-item">
                 <span className="legend-dot yellow"></span>
                 <span className="legend-name">Warning</span>
-                <strong className="legend-qty font-mono">1 (16.7%)</strong>
-              </div>
-              <div className="donut-legend-item">
-                <span className="legend-dot orange"></span>
-                <span className="legend-name">Anomalous</span>
-                <strong className="legend-qty font-mono">1 (16.7%)</strong>
+                <strong className="legend-qty font-mono">{warningCount} ({Math.round((warningCount / Math.max(1, totalStations)) * 100)}%)</strong>
               </div>
               <div className="donut-legend-item">
                 <span className="legend-dot red"></span>
-                <span className="legend-name">Critical</span>
-                <strong className="legend-qty font-mono">0 (0%)</strong>
+                <span className="legend-name">Critical / Anomaly</span>
+                <strong className="legend-qty font-mono">{criticalCount} ({Math.round((criticalCount / Math.max(1, totalStations)) * 100)}%)</strong>
               </div>
             </div>
           </div>

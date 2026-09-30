@@ -104,3 +104,51 @@ export async function uploadCSVFile(file) {
   });
   return res.json();
 }
+
+export async function triggerModelTraining() {
+  const res = await fetch(`${API_BASE}/model/train`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Model training failed');
+  }
+  return res.json();
+}
+
+export async function recalibrateModelThresholds() {
+  const res = await fetch(`${API_BASE}/model/recalibrate`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Recalibration failed');
+  }
+  return res.json();
+}
+
+export async function fetchSystemMode() {
+  const res = await fetch(`${API_BASE}/system/mode`);
+  return res.json();
+}
+
+export async function setSystemMode(modeOrEdge) {
+  const payload = typeof modeOrEdge === 'boolean' 
+    ? { edge_mode: modeOrEdge } 
+    : { mode: modeOrEdge };
+  const res = await fetch(`${API_BASE}/system/mode`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+export async function updateStationLimits(stationId, config) {
+  const res = await fetch(`${API_BASE}/stations/${stationId}/config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to update station config');
+  }
+  return res.json();
+}

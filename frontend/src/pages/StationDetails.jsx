@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { StatusBadge } from '../components/StatusBadge';
 import { Settings, ShieldAlert, RotateCcw, Wrench, CheckCircle, AlertTriangle } from 'lucide-react';
 
-export function StationDetails({ station, observations, onReplayEvent }) {
-  if (!station) return <div>No station selected.</div>;
+export function StationDetails({ station, stations = [], onSelectStation, observations = [], onReplayEvent, onNavigateSettings }) {
+  if (!station) return <div className="panel" style={{ padding: '2rem', textAlign: 'center' }}>No station selected.</div>;
 
   const health = station.health || {};
   const stationObs = observations.filter(o => o.station_id === station.station_id).slice(-15);
@@ -11,10 +11,24 @@ export function StationDetails({ station, observations, onReplayEvent }) {
 
   return (
     <div>
-      {/* Station Metadata Header */}
+      {/* Station Selector & Metadata Header */}
       <div className="panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
+            {stations.length > 0 && (
+              <select
+                className="form-select"
+                style={{ width: '260px', padding: '0.35rem 0.6rem', fontWeight: 600 }}
+                value={station.station_id}
+                onChange={(e) => onSelectStation && onSelectStation(e.target.value)}
+              >
+                {stations.map(st => (
+                  <option key={st.station_id} value={st.station_id}>
+                    {st.station_id} — {st.station_name}
+                  </option>
+                ))}
+              </select>
+            )}
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{station.station_name}</h2>
             <span className="font-mono" style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)' }}>({station.station_id})</span>
             <StatusBadge status={station.status} />
@@ -25,6 +39,15 @@ export function StationDetails({ station, observations, onReplayEvent }) {
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem' }}>
+          {onNavigateSettings && (
+            <button
+              className="btn btn-secondary"
+              onClick={onNavigateSettings}
+            >
+              <Settings size={14} />
+              <span>Configure Limits</span>
+            </button>
+          )}
           <button
             className="btn btn-secondary"
             onClick={() => onReplayEvent && onReplayEvent(station.station_id)}

@@ -40,6 +40,11 @@ class AnalysisPipeline:
         self.station_buffers: Dict[str, List[ObservationRaw]] = {}
         # Latest peer observations: {station_id: ObservationRaw}
         self.latest_peer_obs: Dict[str, ObservationRaw] = {}
+        # Edge deployment inference mode flag
+        self.edge_mode: bool = False
+
+    def set_edge_mode(self, enabled: bool):
+        self.edge_mode = enabled
 
     def get_history(self, station_id: str) -> List[ObservationRaw]:
         return self.station_buffers.get(station_id, [])
@@ -66,17 +71,29 @@ class AnalysisPipeline:
         physics_result: PhysicsResult = self.physics_engine.validate_physics(current, history)
 
         # 4. Machine Learning Anomaly Detection
-        iforest_res = self.iforest_engine.predict_features(feat_dict)
-        lstm_res = self.lstm_engine.predict_sequence(current, history)
-
-        ml_result = MLResult(
-            isolation_forest_score=iforest_res["score"],
-            isolation_forest_anomaly=iforest_res["is_anomaly"],
-            lstm_recon_error=lstm_res["recon_error"],
-            lstm_anomaly=lstm_res["is_anomaly"],
-            lstm_var_errors=lstm_res.get("var_errors", {}),
-            feature_contributions=iforest_res.get("feature_contributions", {})
-        )
+        if self.edge_mode:
+            # Lightweight Edge Mode: Fast deterministic + Isolation Forest
+            iforest_res = self.iforest_engine.predict_features(feat_dict)
+            ml_result = MLResult(
+                isolation_forest_score=iforest_res["score"],
+                isolation_forest_anomaly=iforest_res["is_anomaly"],
+                lstm_recon_error=0.0,
+                lstm_anomaly=False,
+                lstm_var_errors={},
+                feature_contributions=iforest_res.get("feature_contributions", {})
+            )
+        else:
+            # Full Mode: Dual ML with PyTorch LSTM sequence autoencoder
+            iforest_res = self.iforest_engine.predict_features(feat_dict)
+            lstm_res = self.lstm_engine.predict_sequence(current, history)
+            ml_result = MLResult(
+                isolation_forest_score=iforest_res["score"],
+                isolation_forest_anomaly=iforest_res["is_anomaly"],
+                lstm_recon_error=lstm_res["recon_error"],
+                lstm_anomaly=lstm_res["is_anomaly"],
+                lstm_var_errors=lstm_res.get("var_errors", {}),
+                feature_contributions=iforest_res.get("feature_contributions", {})
+            )
 
         # 5. Spatial Consistency Assessment (optional if peers present)
         peers = peer_obs or self.latest_peer_obs

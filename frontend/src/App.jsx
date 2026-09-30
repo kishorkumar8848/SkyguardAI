@@ -156,6 +156,7 @@ export function App() {
               lastTick={lastTick}
               onSelectStation={(sid) => setSelectedStationId(sid)}
               onNavigateTab={(tab) => setActiveTab(tab)}
+              onInspectExplanation={handleInspectExplanation}
             />
           )}
 
@@ -180,11 +181,14 @@ export function App() {
           {activeTab === 'station-detail' && (
             <StationDetails
               station={selectedStation}
+              stations={stations}
+              onSelectStation={(sid) => setSelectedStationId(sid)}
               observations={observations}
               onReplayEvent={(sid) => {
                 setActiveTab('live');
                 setSelectedStationId(sid);
               }}
+              onNavigateSettings={() => setActiveTab('settings')}
             />
           )}
 
