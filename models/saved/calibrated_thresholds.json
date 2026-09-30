@@ -1,14 +1,14 @@
 {
   "isolation_forest": {
-    "percentile_98": 0.5089542037106711,
-    "three_sigma": 0.5251791431472701,
-    "robust_mad": 0.5097982190434309,
-    "selected_threshold": 0.5089542037106711
+    "percentile_98": 0.5065025408832037,
+    "three_sigma": 0.5264004953263383,
+    "robust_mad": 0.5124237546020575,
+    "selected_threshold": 0.5065025408832037
   },
   "lstm_autoencoder": {
-    "percentile_98": 0.031735,
-    "three_sigma": 0.030820369598259588,
-    "robust_mad": 0.022005,
-    "selected_threshold": 0.031735
+    "percentile_98": 0.031545,
+    "three_sigma": 0.03070702216363428,
+    "robust_mad": 0.02207,
+    "selected_threshold": 0.031545
   }
 }
